@@ -1,16 +1,16 @@
 previousRngState = rng(0, "twister");
 
 obsInfo = rlNumericSpec([4 1], ...
-    LowerLimit = [-inf -inf -inf -inf]', ...
+    LowerLimit = [-inf -inf 0 0]', ...
     UpperLimit = [inf inf inf inf]');
 
-actInfo =  rlNumericSpec([3, 1]);
+actInfo =  rlNumericSpec([4, 1]);
 
-env = rlSimulinkEnv("TwoSegmentArm_muscles", "TwoSegmentArm_muscles/ML Agent/arm_agent", ...
+env = rlSimulinkEnv("TwoSegmentArm_muscles_shoulder_update", "TwoSegmentArm_muscles_shoulder_update/arm_agent", ...
     obsInfo, actInfo); % Last two might not be correct
 % env.ResetFcn = @localResetFcn; % TODO
 
-Ts = 0.2;
+Ts = 0.15;
 Tf = 10;
 
 % Critic Network
@@ -19,9 +19,11 @@ actPath = featureInputLayer(actInfo.Dimension(1), Name="actIn");
 
 deepLayers = [
     concatenationLayer(1, 2,Name="concat")
-    fullyConnectedLayer(5)
+    fullyConnectedLayer(8)
     leakyReluLayer()
-    fullyConnectedLayer(5)
+    fullyConnectedLayer(8)
+    leakyReluLayer()
+    fullyConnectedLayer(8)
     leakyReluLayer()
     fullyConnectedLayer(1, Name="QValue")
     ];
@@ -45,10 +47,12 @@ critic = rlQValueFunction(criticNet, obsInfo, actInfo, ...
 
 actorNet = [
     featureInputLayer(obsInfo.Dimension(1))
-    fullyConnectedLayer(5)
-    reluLayer()
-    fullyConnectedLayer(5)
-    reluLayer()
+    fullyConnectedLayer(8)
+    leakyReluLayer()
+    fullyConnectedLayer(8)
+    leakyReluLayer()
+    fullyConnectedLayer(8)
+    leakyReluLayer()
     fullyConnectedLayer(actInfo.Dimension(1))];
 
 rng(0, "twister");
@@ -61,7 +65,7 @@ agent = rlDDPGAgent(actor, critic);
 
 agent.AgentOptions.SampleTime = Ts;
 agent.AgentOptions.DiscountFactor = 1.0;
-agent.AgentOptions.MiniBatchSize = 10;
+agent.AgentOptions.MiniBatchSize = 25;
 agent.AgentOptions.ExperienceBufferLength = 1e5;
 
 actorOpts = rlOptimizerOptions( ...
@@ -73,8 +77,8 @@ criticOpts = rlOptimizerOptions( ...
 agent.AgentOptions.ActorOptimizerOptions = actorOpts;
 agent.AgentOptions.CriticOptimizerOptions = criticOpts;
 
-agent.AgentOptions.NoiseOptions.StandardDeviation = 0.3;
-agent.AgentOptions.NoiseOptions.StandardDeviationDecayRate = 1e-4;
+agent.AgentOptions.NoiseOptions.StandardDeviation = 0.7;
+agent.AgentOptions.NoiseOptions.StandardDeviationDecayRate = 1e-3;
 
 
 % training options
@@ -82,9 +86,9 @@ trainOpts = rlTrainingOptions(...
     MaxEpisodes=500, ...
     MaxStepsPerEpisode=ceil(Tf/Ts), ...
     Plots="training-progress", ...
-    Verbose=false, ...
+    Verbose=true, ...
     StopTrainingCriteria="EvaluationStatistic", ...
-    StopTrainingValue=8000);
+    StopTrainingValue=1000);
 
 % agent evaluator
 evl = rlEvaluator(EvaluationFrequency=10,NumEpisodes=5);
