@@ -1,12 +1,12 @@
 previousRngState = rng(0, "twister");
 
-obsInfo = rlNumericSpec([4 1], ...
-    LowerLimit = [-inf -inf 0 0]', ...
-    UpperLimit = [inf inf inf inf]');
+obsInfo = rlNumericSpec([6 1], ...
+    LowerLimit = [-inf -inf -inf -inf -inf -inf]', ...
+    UpperLimit = [ inf  inf  inf  inf  inf  inf]');
 
 actInfo =  rlNumericSpec([4, 1]);
 
-env = rlSimulinkEnv("TwoSegmentArm_muscles_shoulder_update", "TwoSegmentArm_muscles_shoulder_update/arm_agent", ...
+env = rlSimulinkEnv("TwoSegmentArm_muscles", "TwoSegmentArm_muscles/ML Agent/arm_agent", ...
     obsInfo, actInfo); % Last two might not be correct
 % env.ResetFcn = @localResetFcn; % TODO
 
@@ -95,10 +95,6 @@ evl = rlEvaluator(EvaluationFrequency=10,NumEpisodes=5);
 
 rng(0, "twister");
 
-do_training = true;
-if do_training
-    trainingStats = train(agent, env, trainOpts, Evaluator=evl);
-end
 
 % function in = localResetFcn(in)
 % end
