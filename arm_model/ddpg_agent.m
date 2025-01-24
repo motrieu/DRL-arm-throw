@@ -19,11 +19,15 @@ actPath = featureInputLayer(actInfo.Dimension(1), Name="actIn");
 
 deepLayers = [
     concatenationLayer(1, 2,Name="concat")
-    fullyConnectedLayer(8)
+    fullyConnectedLayer(25)
     leakyReluLayer()
-    fullyConnectedLayer(8)
+    fullyConnectedLayer(25)
     leakyReluLayer()
-    fullyConnectedLayer(8)
+    fullyConnectedLayer(25)
+    leakyReluLayer()
+    fullyConnectedLayer(25)
+    leakyReluLayer()
+    fullyConnectedLayer(25)
     leakyReluLayer()
     fullyConnectedLayer(1, Name="QValue")
     ];
@@ -47,11 +51,15 @@ critic = rlQValueFunction(criticNet, obsInfo, actInfo, ...
 
 actorNet = [
     featureInputLayer(obsInfo.Dimension(1))
-    fullyConnectedLayer(8)
+    fullyConnectedLayer(25)
     leakyReluLayer()
-    fullyConnectedLayer(8)
+    fullyConnectedLayer(25)
     leakyReluLayer()
-    fullyConnectedLayer(8)
+    fullyConnectedLayer(25)
+    leakyReluLayer()
+    fullyConnectedLayer(25)
+    leakyReluLayer()
+    fullyConnectedLayer(25)
     leakyReluLayer()
     fullyConnectedLayer(actInfo.Dimension(1))];
 
@@ -64,21 +72,21 @@ actor = rlContinuousDeterministicActor(actorNet, obsInfo, actInfo);
 agent = rlDDPGAgent(actor, critic);
 
 agent.AgentOptions.SampleTime = Ts;
-agent.AgentOptions.DiscountFactor = 1.0;
-agent.AgentOptions.MiniBatchSize = 25;
-agent.AgentOptions.ExperienceBufferLength = 1e5;
+agent.AgentOptions.DiscountFactor = 0.9;
+agent.AgentOptions.MiniBatchSize = 250;
+agent.AgentOptions.ExperienceBufferLength = 1e6;
 
 actorOpts = rlOptimizerOptions( ...
     LearnRate=1e-3, ...
     GradientThreshold=1);
 criticOpts = rlOptimizerOptions( ...
-    LearnRate=1e-3, ...
+    LearnRate=1e-2, ...
     GradientThreshold=1);
 agent.AgentOptions.ActorOptimizerOptions = actorOpts;
 agent.AgentOptions.CriticOptimizerOptions = criticOpts;
 
-agent.AgentOptions.NoiseOptions.StandardDeviation = 0.7;
-agent.AgentOptions.NoiseOptions.StandardDeviationDecayRate = 1e-3;
+agent.AgentOptions.NoiseOptions.StandardDeviation = 0.3;
+agent.AgentOptions.NoiseOptions.StandardDeviationDecayRate = 1e-4;
 
 
 % training options
@@ -88,10 +96,14 @@ trainOpts = rlTrainingOptions(...
     Plots="training-progress", ...
     Verbose=true, ...
     StopTrainingCriteria="EvaluationStatistic", ...
-    StopTrainingValue=1000);
+    StopTrainingValue=100);
+% UseParallel=true, ...
+% trainOpts.ParallelizationOptions.Mode = 'async';
+% trainOpts.ParallelizationOptions.StepsUntilDataIsSent = 32;
+% trainOpts.ParallelizationOptions.DataToSendFromWorkers = 'Experiences';
 
 % agent evaluator
-evl = rlEvaluator(EvaluationFrequency=10,NumEpisodes=5);
+evl = rlEvaluator(EvaluationFrequency=30,NumEpisodes=10);
 
 rng(0, "twister");
 
