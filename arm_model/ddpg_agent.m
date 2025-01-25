@@ -1,4 +1,5 @@
 previousRngState = rng(0, "twister");
+rand_basket_pos = [-2.5, 1.9, 0];
 
 obsInfo = rlNumericSpec([6 1], ...
     LowerLimit = [-inf -inf -inf -inf -inf -inf]', ...
@@ -10,7 +11,7 @@ env = rlSimulinkEnv("TwoSegmentArm_muscles", "TwoSegmentArm_muscles/ML Agent/arm
     obsInfo, actInfo); % Last two might not be correct
 % env.ResetFcn = @localResetFcn; % TODO
 
-Ts = 0.15;
+Ts = 0.075;
 Tf = 10;
 
 % Critic Network
@@ -19,15 +20,13 @@ actPath = featureInputLayer(actInfo.Dimension(1), Name="actIn");
 
 deepLayers = [
     concatenationLayer(1, 2,Name="concat")
-    fullyConnectedLayer(25)
+    fullyConnectedLayer(10)
     leakyReluLayer()
-    fullyConnectedLayer(25)
+    fullyConnectedLayer(10)
     leakyReluLayer()
-    fullyConnectedLayer(25)
+    fullyConnectedLayer(10)
     leakyReluLayer()
-    fullyConnectedLayer(25)
-    leakyReluLayer()
-    fullyConnectedLayer(25)
+    fullyConnectedLayer(10)
     leakyReluLayer()
     fullyConnectedLayer(1, Name="QValue")
     ];
@@ -51,15 +50,13 @@ critic = rlQValueFunction(criticNet, obsInfo, actInfo, ...
 
 actorNet = [
     featureInputLayer(obsInfo.Dimension(1))
-    fullyConnectedLayer(25)
+    fullyConnectedLayer(10)
     leakyReluLayer()
-    fullyConnectedLayer(25)
+    fullyConnectedLayer(10)
     leakyReluLayer()
-    fullyConnectedLayer(25)
+    fullyConnectedLayer(10)
     leakyReluLayer()
-    fullyConnectedLayer(25)
-    leakyReluLayer()
-    fullyConnectedLayer(25)
+    fullyConnectedLayer(10)
     leakyReluLayer()
     fullyConnectedLayer(actInfo.Dimension(1))];
 
@@ -73,8 +70,8 @@ agent = rlDDPGAgent(actor, critic);
 
 agent.AgentOptions.SampleTime = Ts;
 agent.AgentOptions.DiscountFactor = 0.9;
-agent.AgentOptions.MiniBatchSize = 500;
-agent.AgentOptions.ExperienceBufferLength = 1e6;
+agent.AgentOptions.MiniBatchSize = 30;
+agent.AgentOptions.ExperienceBufferLength = 1e3;
 
 actorOpts = rlOptimizerOptions( ...
     LearnRate=1e-3, ...
@@ -96,7 +93,7 @@ trainOpts = rlTrainingOptions(...
     Plots="training-progress", ...
     Verbose=true, ...
     StopTrainingCriteria="EvaluationStatistic", ...
-    StopTrainingValue=100);
+    StopTrainingValue=400);
 % UseParallel=true, ...
 % trainOpts.ParallelizationOptions.Mode = 'async';
 % trainOpts.ParallelizationOptions.StepsUntilDataIsSent = 32;
@@ -108,5 +105,6 @@ evl = rlEvaluator(EvaluationFrequency=100,NumEpisodes=10);
 rng(0, "twister");
 
 
-% function in = localResetFcn(in)
-% end
+function in = localResetFcn(in)
+rand_basket_pos = [randn - 3, 1.9, 0];
+end
