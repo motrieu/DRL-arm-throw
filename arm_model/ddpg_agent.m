@@ -73,7 +73,7 @@ agent = rlDDPGAgent(actor, critic);
 
 agent.AgentOptions.SampleTime = Ts;
 agent.AgentOptions.DiscountFactor = 0.9;
-agent.AgentOptions.MiniBatchSize = 250;
+agent.AgentOptions.MiniBatchSize = 500;
 agent.AgentOptions.ExperienceBufferLength = 1e6;
 
 actorOpts = rlOptimizerOptions( ...
@@ -91,7 +91,7 @@ agent.AgentOptions.NoiseOptions.StandardDeviationDecayRate = 1e-4;
 
 % training options
 trainOpts = rlTrainingOptions(...
-    MaxEpisodes=500, ...
+    MaxEpisodes=3000, ...
     MaxStepsPerEpisode=ceil(Tf/Ts), ...
     Plots="training-progress", ...
     Verbose=true, ...
@@ -103,7 +103,7 @@ trainOpts = rlTrainingOptions(...
 % trainOpts.ParallelizationOptions.DataToSendFromWorkers = 'Experiences';
 
 % agent evaluator
-evl = rlEvaluator(EvaluationFrequency=30,NumEpisodes=10);
+evl = rlEvaluator(EvaluationFrequency=100,NumEpisodes=10);
 
 rng(0, "twister");
 
