@@ -1,6 +1,6 @@
 function in = localResetFcn(in)
 rand = min(max(randn / 2, -1.8), 1.8);
-in = setVariable(in, "random_offset", rand);
+in = setVariable(in, "random_offset", 0);
 end
 
 previousRngState = rng(0, "twister");
@@ -27,14 +27,12 @@ deepLayers = [
     concatenationLayer(1, 2,Name="concat")
     fullyConnectedLayer(15)
     leakyReluLayer()
+    dropoutLayer
     fullyConnectedLayer(15)
     leakyReluLayer()
     fullyConnectedLayer(15)
     leakyReluLayer()
-    fullyConnectedLayer(15)
-    leakyReluLayer()
-    fullyConnectedLayer(15)
-    leakyReluLayer()
+    dropoutLayer
     fullyConnectedLayer(15)
     leakyReluLayer()
     fullyConnectedLayer(1, Name="QValue")
@@ -61,10 +59,12 @@ actorNet = [
     featureInputLayer(obsInfo.Dimension(1))
     fullyConnectedLayer(10)
     leakyReluLayer()
+    dropoutLayer
     fullyConnectedLayer(10)
     leakyReluLayer()
     fullyConnectedLayer(10)
     leakyReluLayer()
+    dropoutLayer
     fullyConnectedLayer(10)
     leakyReluLayer()
     fullyConnectedLayer(actInfo.Dimension(1))];
@@ -79,20 +79,20 @@ agent = rlDDPGAgent(actor, critic);
 
 agent.AgentOptions.SampleTime = Ts;
 agent.AgentOptions.DiscountFactor = 0.9;
-agent.AgentOptions.MiniBatchSize = 125;
+agent.AgentOptions.MiniBatchSize = 30;
 agent.AgentOptions.ExperienceBufferLength = 1e5;
 
 actorOpts = rlOptimizerOptions( ...
-    LearnRate=1e-4, ...
+    LearnRate=1e-3, ...
     GradientThreshold=1);
 criticOpts = rlOptimizerOptions( ...
-    LearnRate=1e-3, ...
+    LearnRate=1e-2, ...
     GradientThreshold=1);
 agent.AgentOptions.ActorOptimizerOptions = actorOpts;
 agent.AgentOptions.CriticOptimizerOptions = criticOpts;
 
 agent.AgentOptions.NoiseOptions.StandardDeviation = 0.3;
-agent.AgentOptions.NoiseOptions.StandardDeviationDecayRate = 1e-3;
+agent.AgentOptions.NoiseOptions.StandardDeviationDecayRate = 1e-4;
 
 
 % training options
@@ -102,7 +102,7 @@ trainOpts = rlTrainingOptions(...
     Plots="training-progress", ...
     Verbose=false, ...
     StopTrainingCriteria="EvaluationStatistic", ...
-    StopTrainingValue=1200);
+    StopTrainingValue=1500);
 % UseParallel=true, ...
 % trainOpts.ParallelizationOptions.Mode = 'async';
 % trainOpts.ParallelizationOptions.StepsUntilDataIsSent = 32;
