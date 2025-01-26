@@ -1,6 +1,6 @@
 function in = localResetFcn(in)
 rand = min(max(randn / 2, -1.8), 1.8);
-in = setVariable(in, "random_offset", 0);
+in = setVariable(in, "random_offset", rand);
 end
 
 previousRngState = rng(0, "twister");
