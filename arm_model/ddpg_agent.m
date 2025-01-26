@@ -1,5 +1,10 @@
+function in = localResetFcn(in)
+rand = min(max(randn / 2, -1.8), 1.8);
+in = setVariable(in, "random_offset", rand);
+end
+
 previousRngState = rng(0, "twister");
-rand_basket_pos = [-2.5, 1.9, 0];
+random_offset = 0;
 
 obsInfo = rlNumericSpec([6 1], ...
     LowerLimit = [-inf -inf -inf -inf -inf -inf]', ...
@@ -7,9 +12,9 @@ obsInfo = rlNumericSpec([6 1], ...
 
 actInfo =  rlNumericSpec([4, 1]);
 
-env = rlSimulinkEnv("TwoSegmentArm_muscles", "TwoSegmentArm_muscles/ML Agent/arm_agent", ...
+env = rlSimulinkEnv("TwoSegmentArm_muscles", "TwoSegmentArm_muscles/arm_agent", ...
     obsInfo, actInfo); % Last two might not be correct
-% env.ResetFcn = @localResetFcn; % TODO
+env.ResetFcn = @localResetFcn; % TODO
 
 Ts = 0.075;
 Tf = 10;
@@ -20,13 +25,17 @@ actPath = featureInputLayer(actInfo.Dimension(1), Name="actIn");
 
 deepLayers = [
     concatenationLayer(1, 2,Name="concat")
-    fullyConnectedLayer(10)
+    fullyConnectedLayer(15)
     leakyReluLayer()
-    fullyConnectedLayer(10)
+    fullyConnectedLayer(15)
     leakyReluLayer()
-    fullyConnectedLayer(10)
+    fullyConnectedLayer(15)
     leakyReluLayer()
-    fullyConnectedLayer(10)
+    fullyConnectedLayer(15)
+    leakyReluLayer()
+    fullyConnectedLayer(15)
+    leakyReluLayer()
+    fullyConnectedLayer(15)
     leakyReluLayer()
     fullyConnectedLayer(1, Name="QValue")
     ];
@@ -70,20 +79,20 @@ agent = rlDDPGAgent(actor, critic);
 
 agent.AgentOptions.SampleTime = Ts;
 agent.AgentOptions.DiscountFactor = 0.9;
-agent.AgentOptions.MiniBatchSize = 30;
-agent.AgentOptions.ExperienceBufferLength = 1e3;
+agent.AgentOptions.MiniBatchSize = 125;
+agent.AgentOptions.ExperienceBufferLength = 1e5;
 
 actorOpts = rlOptimizerOptions( ...
-    LearnRate=1e-3, ...
+    LearnRate=1e-4, ...
     GradientThreshold=1);
 criticOpts = rlOptimizerOptions( ...
-    LearnRate=1e-2, ...
+    LearnRate=1e-3, ...
     GradientThreshold=1);
 agent.AgentOptions.ActorOptimizerOptions = actorOpts;
 agent.AgentOptions.CriticOptimizerOptions = criticOpts;
 
 agent.AgentOptions.NoiseOptions.StandardDeviation = 0.3;
-agent.AgentOptions.NoiseOptions.StandardDeviationDecayRate = 1e-4;
+agent.AgentOptions.NoiseOptions.StandardDeviationDecayRate = 1e-3;
 
 
 % training options
@@ -91,20 +100,17 @@ trainOpts = rlTrainingOptions(...
     MaxEpisodes=3000, ...
     MaxStepsPerEpisode=ceil(Tf/Ts), ...
     Plots="training-progress", ...
-    Verbose=true, ...
+    Verbose=false, ...
     StopTrainingCriteria="EvaluationStatistic", ...
-    StopTrainingValue=400);
+    StopTrainingValue=1200);
 % UseParallel=true, ...
 % trainOpts.ParallelizationOptions.Mode = 'async';
 % trainOpts.ParallelizationOptions.StepsUntilDataIsSent = 32;
 % trainOpts.ParallelizationOptions.DataToSendFromWorkers = 'Experiences';
 
 % agent evaluator
-evl = rlEvaluator(EvaluationFrequency=100,NumEpisodes=10);
+evl = rlEvaluator(EvaluationFrequency=50,NumEpisodes=5);
 
-rng(0, "twister");
+% rng(0, "twister");
 
 
-function in = localResetFcn(in)
-rand_basket_pos = [randn - 3, 1.9, 0];
-end
