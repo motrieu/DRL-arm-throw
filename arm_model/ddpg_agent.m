@@ -28,13 +28,13 @@ deepLayers = [
     fullyConnectedLayer(15)
     leakyReluLayer()
     dropoutLayer
-    fullyConnectedLayer(15)
-    leakyReluLayer()
+    % fullyConnectedLayer(15)
+    % leakyReluLayer()
     fullyConnectedLayer(15)
     leakyReluLayer()
     dropoutLayer
-    fullyConnectedLayer(15)
-    leakyReluLayer()
+    % fullyConnectedLayer(15)
+    % leakyReluLayer()
     fullyConnectedLayer(1, Name="QValue")
     ];
 
@@ -57,16 +57,16 @@ critic = rlQValueFunction(criticNet, obsInfo, actInfo, ...
 
 actorNet = [
     featureInputLayer(obsInfo.Dimension(1))
-    fullyConnectedLayer(10)
-    leakyReluLayer()
+    % fullyConnectedLayer(10)
+    % leakyReluLayer()
     dropoutLayer
     fullyConnectedLayer(10)
     leakyReluLayer()
     fullyConnectedLayer(10)
     leakyReluLayer()
     dropoutLayer
-    fullyConnectedLayer(10)
-    leakyReluLayer()
+    % fullyConnectedLayer(10)
+    % leakyReluLayer()
     fullyConnectedLayer(actInfo.Dimension(1))];
 
 rng(0, "twister");
@@ -79,8 +79,8 @@ agent = rlDDPGAgent(actor, critic);
 
 agent.AgentOptions.SampleTime = Ts;
 agent.AgentOptions.DiscountFactor = 0.9;
-agent.AgentOptions.MiniBatchSize = 30;
-agent.AgentOptions.ExperienceBufferLength = 1e5;
+agent.AgentOptions.MiniBatchSize = 1250;
+agent.AgentOptions.ExperienceBufferLength = 1e6;
 
 actorOpts = rlOptimizerOptions( ...
     LearnRate=1e-3, ...
@@ -92,24 +92,24 @@ agent.AgentOptions.ActorOptimizerOptions = actorOpts;
 agent.AgentOptions.CriticOptimizerOptions = criticOpts;
 
 agent.AgentOptions.NoiseOptions.StandardDeviation = 0.3;
-agent.AgentOptions.NoiseOptions.StandardDeviationDecayRate = 1e-4;
+agent.AgentOptions.NoiseOptions.StandardDeviationDecayRate = 1e-3;
 
 
 % training options
 trainOpts = rlTrainingOptions(...
-    MaxEpisodes=3000, ...
+    MaxEpisodes=1000, ...
     MaxStepsPerEpisode=ceil(Tf/Ts), ...
     Plots="training-progress", ...
     Verbose=false, ...
     StopTrainingCriteria="EvaluationStatistic", ...
-    StopTrainingValue=1500);
+    StopTrainingValue=800);
 % UseParallel=true, ...
 % trainOpts.ParallelizationOptions.Mode = 'async';
 % trainOpts.ParallelizationOptions.StepsUntilDataIsSent = 32;
 % trainOpts.ParallelizationOptions.DataToSendFromWorkers = 'Experiences';
 
 % agent evaluator
-evl = rlEvaluator(EvaluationFrequency=50,NumEpisodes=5);
+evl = rlEvaluator(EvaluationFrequency=30,NumEpisodes=10);
 
 % rng(0, "twister");
 
