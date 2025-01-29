@@ -1,6 +1,6 @@
 function in = localResetFcn(in)
-rand = min(max(randn / 2, -1.8), 1.8);
-in = setVariable(in, "random_offset", rand);
+rand_off = min(max(rand / 2, -1.8), 1.8);
+in = setVariable(in, "random_offset", rand_off);
 end
 
 previousRngState = rng(0, "twister");
@@ -15,6 +15,7 @@ actInfo =  rlNumericSpec([4, 1]);
 env = rlSimulinkEnv("TwoSegmentArm_muscles", "TwoSegmentArm_muscles/arm_agent", ...
     obsInfo, actInfo); % Last two might not be correct
 env.ResetFcn = @localResetFcn; % TODO
+env.UseFastRestart = "off";
 
 Ts = 0.075;
 Tf = 10;
@@ -100,9 +101,9 @@ trainOpts = rlTrainingOptions(...
     MaxEpisodes=1000, ...
     MaxStepsPerEpisode=ceil(Tf/Ts), ...
     Plots="training-progress", ...
-    Verbose=false, ...
+    Verbose=true, ...
     StopTrainingCriteria="EvaluationStatistic", ...
-    StopTrainingValue=800);
+    StopTrainingValue=870);
 % UseParallel=true, ...
 % trainOpts.ParallelizationOptions.Mode = 'async';
 % trainOpts.ParallelizationOptions.StepsUntilDataIsSent = 32;
@@ -110,7 +111,8 @@ trainOpts = rlTrainingOptions(...
 
 % agent evaluator
 evl = rlEvaluator(EvaluationFrequency=30,NumEpisodes=10);
-
-% rng(0, "twister");
+simOpts = rlSimulationOptions(MaxSteps=ceil(Tf/Ts), ...
+    StopOnError="on", ...
+    NumSimulations=50);
 
 
